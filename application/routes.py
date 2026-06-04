@@ -550,3 +550,50 @@ def delete_order():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+#Announcemets
+
+from flask import request, jsonify
+
+# In-memory database to store updates without affecting production tables
+announcements_db = [
+    {
+        "id": 1,
+        "title": "Summer Reading Challenge",
+        "content": "Join our annual summer reading contest starting this Monday!"
+    }
+]
+announcement_id_counter = 2
+
+@app.route('/api/announcements', methods=['GET'])
+def get_announcements():
+    """Retrieve all library notifications."""
+    return jsonify(announcements_db), 200
+
+@app.route('/api/announcements', methods=['POST'])
+def create_announcement():
+    """Publish a new system announcement."""
+    global announcement_id_counter
+    data = request.get_json() or {}
+    
+    # Input field validation checking
+    if 'title' not in data or 'content' not in data:
+        return jsonify({"error": "Missing required fields: title and content are mandatory"}), 400
+        
+    new_announcement = {
+        "id": announcement_id_counter,
+        "title": data['title'],
+        "content": data['content']
+    }
+    
+    announcements_db.append(new_announcement)
+    announcement_id_counter += 1
+    return jsonify(new_announcement), 201
+
+@app.route('/api/announcements/<int:announcement_id>', methods=['GET'])
+def get_announcement(announcement_id):
+    """Retrieve an announcement profile by its matching integer ID."""
+    announcement = next((item for item in announcements_db if item['id'] == announcement_id), None)
+    if announcement is None:
+        return jsonify({"error": f"Announcement with ID {announcement_id} not found"}), 404
+    return jsonify(announcement), 200
